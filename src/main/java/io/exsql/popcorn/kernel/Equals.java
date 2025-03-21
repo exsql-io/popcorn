@@ -16,16 +16,12 @@ public class Equals {
         }
         
         if (left.length < bound) {
-            var leftVec = ByteVector.fromArray(BYTE_SPECIES, left, 0);
-            var rightVec = ByteVector.fromArray(BYTE_SPECIES, right, 0);
-            return leftVec.eq(rightVec).allTrue();
+            return equals(left, right, 0);
         }
         
         var i = 0;
         for (; i < bound; i += BYTE_SPECIES.length()) {
-            var leftVec = ByteVector.fromArray(BYTE_SPECIES, left, i);
-            var rightVec = ByteVector.fromArray(BYTE_SPECIES, right, i);
-            if (!leftVec.eq(rightVec).allTrue()) {
+            if (!equals(left, right, i)) {
                 return false;
             }
         }
@@ -37,6 +33,12 @@ public class Equals {
         }
 
         return true;
+    }
+
+    private static boolean equals(final byte[] left, final byte[] right, final int offset) {
+        var leftVec = ByteVector.fromArray(BYTE_SPECIES, left, offset);
+        var rightVec = ByteVector.fromArray(BYTE_SPECIES, right, offset);
+        return leftVec.eq(rightVec).allTrue();
     }
 
 }
