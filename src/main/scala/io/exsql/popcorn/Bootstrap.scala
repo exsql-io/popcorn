@@ -4,8 +4,8 @@ import com.google.common.base.Stopwatch
 import com.typesafe.scalalogging.StrictLogging
 import io.exsql.popcorn.engine.Engine
 import io.exsql.popcorn.engine.Engine.{ArrayBatch, Batch}
-import io.exsql.popcorn.sexpr.Parser
-import io.exsql.popcorn.sexpr.Parser.{AndExpr, SExpr, TraitExpr, Value}
+import io.exsql.popcorn.sexpr.Compiler
+import io.exsql.popcorn.sexpr.Compiler.{AndExpr, SExpr, TraitExpr, Value}
 import net.datafaker.Faker
 
 import java.nio.charset.StandardCharsets
@@ -54,7 +54,7 @@ object Bootstrap extends StrictLogging {
   }
 
   private def generate(faker: Faker, size: Int): Array[SExpr] = {
-    Array.fill[SExpr](size)(Parser.parse(s"""(and((trait-eq field1 "${faker.naruto().character()}") (trait-eq field2 "${faker.naruto().character()}")))"""))
+    Array.fill[SExpr](size)(Compiler.compile(s"""(and((trait-eq field1 "${faker.naruto().character()}") (trait-eq field2 "${faker.naruto().character()}")))"""))
   }
 
   private def generate[T](faker: Faker, size: Int, fields: Array[DataType]): Batch[T] = {

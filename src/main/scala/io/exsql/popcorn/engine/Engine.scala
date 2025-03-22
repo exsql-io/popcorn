@@ -1,7 +1,7 @@
 package io.exsql.popcorn.engine
 
 import io.exsql.popcorn.kernel.And
-import io.exsql.popcorn.sexpr.Parser.{AndExpr, SExpr, TraitExpr, Value}
+import io.exsql.popcorn.sexpr.Compiler.{AndExpr, SExpr, TraitExpr, Value}
 import io.exsql.popcorn.{DataType, kernel}
 
 import scala.reflect.ClassTag
