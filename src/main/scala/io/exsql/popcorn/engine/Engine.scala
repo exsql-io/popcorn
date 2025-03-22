@@ -1,7 +1,7 @@
 package io.exsql.popcorn.engine
 
-import io.exsql.popcorn.kernel.And
-import io.exsql.popcorn.sexpr.Compiler.{AndExpr, SExpr, TraitExpr, Value}
+import io.exsql.popcorn.kernel.{And, Not, Or}
+import io.exsql.popcorn.sexpr.Compiler.*
 import io.exsql.popcorn.{DataType, kernel}
 
 import scala.reflect.ClassTag
@@ -25,22 +25,40 @@ object Engine {
     new ArrayBatch[T](Array(
       sexpr match
         case AndExpr(left, right) =>
-          val lresult = Engine.evaluate[Boolean](left, schema, batch)
-          val rresult = Engine.evaluate[Boolean](right, schema, batch)
-          And.and(lresult(0), rresult(0)).asInstanceOf[Array[T]]
-        case TraitExpr(subject, _, value) =>
+          val lr = Engine.evaluate[Boolean](left, schema, batch)
+          val rr = Engine.evaluate[Boolean](right, schema, batch)
+          And.and(lr(0), rr(0)).asInstanceOf[Array[T]]
+        case OrExpr(left, right) =>
+          val lr = Engine.evaluate[Boolean](left, schema, batch)
+          val rr = Engine.evaluate[Boolean](right, schema, batch)
+          Or.or(lr(0), rr(0)).asInstanceOf[Array[T]]
+        case NotExpr(child) =>
+          val result = Engine.evaluate[Boolean](child, schema, batch)
+          Not.not(result(0)).asInstanceOf[Array[T]]
+        case FnExpr(subject, predicate, value) =>
           val (ordinal, dataType) = schema(subject)
-          evaluate[T](dataType, value.asInstanceOf[Value], batch(ordinal))
+          evaluate[T](predicate, dataType, value.asInstanceOf[Value], batch(ordinal))
     ))
   }
 
-  //BOOLEAN, LONG, DOUBLE, UTF8, BYTES
-  private def evaluate[T](dataType: DataType, value: Value, vector: Array[Any]): Array[T] = {
-    dataType match
-      case DataType.BOOLEAN => ???
-      case DataType.LONG => ???
-      case DataType.DOUBLE => ???
-      case DataType.UTF8 => vector.map(entry => kernel.Equals.equals(value.asUTF8, entry.asInstanceOf[Array[Byte]])).asInstanceOf[Array[T]]
+  private def evaluate[T](predicate: Predicate, dataType: DataType, value: Value, vector: Array[Any]): Array[T] = {
+    val result = {
+      dataType match {
+        case DataType.BOOLEAN => ???
+        case DataType.LONG => ???
+        case DataType.DOUBLE => ???
+        case DataType.UTF8 =>
+          predicate match
+            case Predicate.Eq => vector.map(entry => kernel.Ordering.equal(value.asUTF8, entry.asInstanceOf[Array[Byte]]))
+            case Predicate.Ne => vector.map(entry => kernel.Ordering.notEqual(value.asUTF8, entry.asInstanceOf[Array[Byte]]))
+            case Predicate.Gt => vector.map(entry => kernel.Ordering.greaterThan(value.asUTF8, entry.asInstanceOf[Array[Byte]]))
+            case Predicate.Gte => vector.map(entry => kernel.Ordering.greaterThanOrEqual(value.asUTF8, entry.asInstanceOf[Array[Byte]]))
+            case Predicate.Lt => vector.map(entry => kernel.Ordering.lessThan(value.asUTF8, entry.asInstanceOf[Array[Byte]]))
+            case Predicate.Lte => vector.map(entry => kernel.Ordering.lessThanOrEqual(value.asUTF8, entry.asInstanceOf[Array[Byte]]))
+      }
+    }
+
+    result.asInstanceOf[Array[T]]
   }
 
   private def toString[T](vectors: Array[Array[T]]): String = {

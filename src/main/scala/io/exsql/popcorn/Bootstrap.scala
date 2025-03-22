@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.StrictLogging
 import io.exsql.popcorn.engine.Engine
 import io.exsql.popcorn.engine.Engine.{ArrayBatch, Batch}
 import io.exsql.popcorn.sexpr.Compiler
-import io.exsql.popcorn.sexpr.Compiler.{AndExpr, SExpr, TraitExpr, Value}
+import io.exsql.popcorn.sexpr.Compiler.{AndExpr, SExpr, FnExpr, Value}
 import net.datafaker.Faker
 
 import java.nio.charset.StandardCharsets
@@ -42,8 +42,8 @@ object Bootstrap extends StrictLogging {
           sexprs.zipWithIndex.foreach { case (sexpr, index) =>
             logger.debug(s"validating s-expression: $sexpr")
             sexpr match
-              case TraitExpr(_, _, value) => validate[Array[Byte]](batch.asInstanceOf[Batch[Array[Byte]]], results(index)(0), Array(value.asInstanceOf[Value].asUTF8))
-              case AndExpr(TraitExpr(_, _, left), TraitExpr(_, _, right)) =>
+              case FnExpr(_, _, value) => validate[Array[Byte]](batch.asInstanceOf[Batch[Array[Byte]]], results(index)(0), Array(value.asInstanceOf[Value].asUTF8))
+              case AndExpr(FnExpr(_, _, left), FnExpr(_, _, right)) =>
                 validate[Array[Byte]](batch.asInstanceOf[Batch[Array[Byte]]], results(index)(0), Array(left.asInstanceOf[Value].asUTF8, right.asInstanceOf[Value].asUTF8))
           }
         }
@@ -54,7 +54,7 @@ object Bootstrap extends StrictLogging {
   }
 
   private def generate(faker: Faker, size: Int): Array[SExpr] = {
-    Array.fill[SExpr](size)(Compiler.compile(s"""(and((trait-eq field1 "${faker.naruto().character()}") (trait-eq field2 "${faker.naruto().character()}")))"""))
+    Array.fill[SExpr](size)(Compiler.compile(s"""(and((eq field1 "${faker.naruto().character()}") (eq field2 "${faker.naruto().character()}")))"""))
   }
 
   private def generate[T](faker: Faker, size: Int, fields: Array[DataType]): Batch[T] = {

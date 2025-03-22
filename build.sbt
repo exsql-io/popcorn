@@ -11,6 +11,10 @@ ThisBuild / scalacOptions ++= Seq(
   "-deprecation"
 )
 
+ThisBuild / javaOptions ++= Seq(
+  "--add-modules=jdk.incubator.vector"
+)
+
 lazy val popcorn = (project in file("."))
   .enablePlugins(Antlr4Plugin)
   .settings(
