@@ -65,6 +65,16 @@ class CompilerSpec extends AnyFlatSpec with must.Matchers {
     )
   }
 
+  it should "properly compile in function expression" in {
+    Compiler.compile("""(in field ("value1" "value2" "value3"))""") must be(
+      FnExpr(
+        subject = "field",
+        predicate = Predicate.In,
+        `object` = MultiValue(Array("value1", "value2", "value3"))
+      )
+    )
+  }
+
   it should "properly compile and expression" in {
     Compiler.compile("""(and((eq field "value1") (eq field "value2")))""") must be(
       AndExpr(

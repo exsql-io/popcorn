@@ -37,11 +37,11 @@ object Engine {
           Not.not(result(0)).asInstanceOf[Array[T]]
         case FnExpr(subject, predicate, value) =>
           val (ordinal, dataType) = schema(subject)
-          evaluate[T](predicate, dataType, value.asInstanceOf[Value], batch(ordinal))
+          evaluate[T](predicate, dataType, value, batch(ordinal))
     ))
   }
 
-  private def evaluate[T](predicate: Predicate, dataType: DataType, value: Value, vector: Array[Any]): Array[T] = {
+  private def evaluate[T](predicate: Predicate, dataType: DataType, `object`: SExpr, vector: Array[Any]): Array[T] = {
     val result = {
       dataType match {
         case DataType.BOOLEAN => ???
@@ -49,12 +49,19 @@ object Engine {
         case DataType.DOUBLE => ???
         case DataType.UTF8 =>
           predicate match
-            case Predicate.Eq => vector.map(entry => kernel.Ordering.equal(value.asUTF8, entry.asInstanceOf[Array[Byte]]))
-            case Predicate.Ne => vector.map(entry => kernel.Ordering.notEqual(value.asUTF8, entry.asInstanceOf[Array[Byte]]))
-            case Predicate.Gt => vector.map(entry => kernel.Ordering.greaterThan(value.asUTF8, entry.asInstanceOf[Array[Byte]]))
-            case Predicate.Gte => vector.map(entry => kernel.Ordering.greaterThanOrEqual(value.asUTF8, entry.asInstanceOf[Array[Byte]]))
-            case Predicate.Lt => vector.map(entry => kernel.Ordering.lessThan(value.asUTF8, entry.asInstanceOf[Array[Byte]]))
-            case Predicate.Lte => vector.map(entry => kernel.Ordering.lessThanOrEqual(value.asUTF8, entry.asInstanceOf[Array[Byte]]))
+            case Predicate.Eq => vector.map(entry => kernel.Ordering.equal(`object`.asInstanceOf[Value].asUTF8, entry.asInstanceOf[Array[Byte]]))
+            case Predicate.Ne => vector.map(entry => kernel.Ordering.notEqual(`object`.asInstanceOf[Value].asUTF8, entry.asInstanceOf[Array[Byte]]))
+            case Predicate.Gt => vector.map(entry => kernel.Ordering.greaterThan(`object`.asInstanceOf[Value].asUTF8, entry.asInstanceOf[Array[Byte]]))
+            case Predicate.Gte => vector.map(entry => kernel.Ordering.greaterThanOrEqual(`object`.asInstanceOf[Value].asUTF8, entry.asInstanceOf[Array[Byte]]))
+            case Predicate.Lt => vector.map(entry => kernel.Ordering.lessThan(`object`.asInstanceOf[Value].asUTF8, entry.asInstanceOf[Array[Byte]]))
+            case Predicate.Lte => vector.map(entry => kernel.Ordering.lessThanOrEqual(`object`.asInstanceOf[Value].asUTF8, entry.asInstanceOf[Array[Byte]]))
+            case Predicate.In =>
+              vector.map { entry =>
+                val values = `object`.asInstanceOf[MultiValue]
+                values.asUTF8.exists { value =>
+                  kernel.Ordering.equal(value, entry.asInstanceOf[Array[Byte]])
+                }
+              }
       }
     }
 

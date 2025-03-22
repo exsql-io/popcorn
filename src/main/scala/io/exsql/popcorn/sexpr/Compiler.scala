@@ -1,6 +1,8 @@
 package io.exsql.popcorn.sexpr
 
 import java.nio.charset.StandardCharsets
+import java.util
+import scala.jdk.CollectionConverters.ListHasAsScala
 
 object Compiler {
 
@@ -14,7 +16,6 @@ object Compiler {
       val CiContains = "ci-contains"
       val ElementContains = "element-contains"
       val Regex = "regex"
-      val In = "in"
     }*/
 
   trait SExpr
@@ -44,6 +45,22 @@ object Compiler {
     override def toString: String = s""""$text""""
   }
 
+  case class MultiValue(texts: Array[String]) extends SExpr {
+    lazy val asUTF8: Array[Array[Byte]] = texts.map(_.getBytes(StandardCharsets.UTF_8))
+    lazy val asLong: Array[Long] = texts.map(_.toLong)
+    lazy val asDouble: Array[Double] = texts.map(_.toDouble)
+    lazy val asBoolean: Array[Boolean] = texts.map(_.toBoolean)
+
+    override def toString: String = {
+      texts.map(text => s""""$text"""").mkString("(", " ", ")")
+    }
+
+    override def equals(obj: Any): Boolean = {
+      if (!obj.isInstanceOf[MultiValue]) return false
+      util.Arrays.equals(texts.asInstanceOf[Array[AnyRef]], obj.asInstanceOf[MultiValue].texts.asInstanceOf[Array[AnyRef]])
+    }
+  }
+
   private object Operators {
     val and = "and"
     val or = "or"
@@ -57,6 +74,7 @@ object Compiler {
     case Gte extends Predicate("gte")
     case Lt extends Predicate("lt")
     case Lte extends Predicate("lte")
+    case In extends Predicate("in")
   }
 
   def compile(sexpression: String): SExpr = {
@@ -119,6 +137,12 @@ object Compiler {
           subject = list.item(1).getText,
           predicate = Predicate.Lte,
           `object` = compile(list.item(2))
+        )
+      case Predicate.In.`operation` =>
+        FnExpr(
+          subject = list.item(1).getText,
+          predicate = Predicate.In,
+          `object` = MultiValue(list.item(2).list_().item().asScala.map(item => unwrap(item.atom().getText)).toArray)
         )
   }
 

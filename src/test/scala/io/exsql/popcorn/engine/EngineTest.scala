@@ -68,6 +68,14 @@ class EngineTest extends AnyFlatSpec with must.Matchers {
     ).toString must be("[[true]]")
   }
 
+  it should """properly evaluate (in field ("value1" "value2" "value3"))""" in {
+    evaluate[Array[Byte], Boolean](
+      """(in field ("value1" "value2" "value3"))""",
+      fieldString,
+      newUTF8Input(Array(Array("value2")))
+    ).toString must be("[[true]]")
+  }
+
   it should """properly evaluate (and((eq field1 "value1") (eq field2 "value2")))""" in {
     evaluate[Array[Byte], Boolean](
       """(and((eq field1 "value1") (eq field2 "value2")))""",
